@@ -28,20 +28,8 @@ JsonRef = NewType("JsonRef", str)
 # derived from https://github.com/pydantic/pydantic/pull/9650
 def _get_all_json_refs(item: Any) -> set[JsonRef]:
     """Get all the definitions references from a JSON schema."""
-    refs: set[JsonRef] = set()
-    if isinstance(item, dict):
-        for key, value in item.items():
-            if key == "$ref" and isinstance(value, str):
-                # the isinstance check ensures that '$ref' isn't the name of a property, etc.
-                refs.add(JsonRef(value))
-            elif isinstance(value, dict):
-                refs.update(_get_all_json_refs(value))
-            elif isinstance(value, list):
-                for item in value:
-                    refs.update(_get_all_json_refs(item))
-    elif isinstance(item, list):
-        for item in item:
-            refs.update(_get_all_json_refs(item))
+    refs = set()
+    _collect_json_refs(item, refs)
     return refs
 
 
@@ -261,3 +249,19 @@ def find_strongly_connected_components(
             sccs.append(component)
 
     return sccs
+
+def _collect_json_refs(item: Any, refs: set[JsonRef]) -> None:
+    """Helper function to collect JSON refs without creating intermediate sets."""
+    if isinstance(item, dict):
+        for key, value in item.items():
+            if key == "$ref" and isinstance(value, str):
+                # the isinstance check ensures that '$ref' isn't the name of a property, etc.
+                refs.add(JsonRef(value))
+            elif isinstance(value, dict):
+                _collect_json_refs(value, refs)
+            elif isinstance(value, list):
+                for sub_item in value:
+                    _collect_json_refs(sub_item, refs)
+    elif isinstance(item, list):
+        for sub_item in item:
+            _collect_json_refs(sub_item, refs)
