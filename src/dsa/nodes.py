@@ -50,12 +50,22 @@ def find_cycle_vertices(edges):
     # Create a directed graph from the edges
     graph = nx.DiGraph(edges)
 
-    # Find all simple cycles in the graph
-    cycles = list(nx.simple_cycles(graph))
-
-    # Flatten the list of cycles and remove duplicates
-    cycle_vertices = {vertex for cycle in cycles for vertex in cycle}
-
+    # Instead of finding all cycles and then extracting vertices,
+    # directly find nodes that are part of cycles
+    cycle_vertices = set()
+    
+    # Find strongly connected components (SCCs)
+    # Nodes in the same SCC can reach each other, indicating potential cycles
+    for component in nx.strongly_connected_components(graph):
+        if len(component) > 1:
+            # If SCC has more than one node, all nodes in it are part of cycles
+            cycle_vertices.update(component)
+        elif len(component) == 1:
+            # For single-node components, check if they have self-loops
+            node = next(iter(component))
+            if graph.has_edge(node, node):
+                cycle_vertices.add(node)
+    
     return sorted(cycle_vertices)
 
 
