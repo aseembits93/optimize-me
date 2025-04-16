@@ -49,13 +49,16 @@ def _get_all_json_refs(item: Any) -> set[JsonRef]:
 def find_cycle_vertices(edges):
     # Create a directed graph from the edges
     graph = nx.DiGraph(edges)
-
-    # Find all simple cycles in the graph
-    cycles = list(nx.simple_cycles(graph))
-
-    # Flatten the list of cycles and remove duplicates
-    cycle_vertices = {vertex for cycle in cycles for vertex in cycle}
-
+    
+    # Find all strongly connected components in the graph
+    sccs = nx.strongly_connected_components(graph)
+    
+    # Filter out components with more than one node (indicates a cycle)
+    cycle_vertices = {node for scc in sccs if len(scc) > 1 for node in scc}
+    
+    # Or nodes that have at least one edge returning to itself
+    cycle_vertices.update(node for node in graph.nodes if graph.has_edge(node, node))
+    
     return sorted(cycle_vertices)
 
 
