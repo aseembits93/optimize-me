@@ -1,5 +1,6 @@
 from typing import Any, NewType
 import networkx as nx
+from collections import defaultdict, deque
 
 
 # derived from https://github.com/langflow-ai/langflow/pull/5261
@@ -160,7 +161,12 @@ def calculate_node_betweenness(
     nodes: list[str], edges: list[dict[str, str]]
 ) -> dict[str, float]:
     betweenness = {node: 0.0 for node in nodes}
-
+    
+    # Build adjacency list for faster neighbor lookup
+    graph = defaultdict(list)
+    for edge in edges:
+        graph[edge["source"]].append(edge["target"])
+    
     # For each pair of nodes, find all shortest paths and count paths through each node
     for source in nodes:
         for target in nodes:
@@ -169,34 +175,47 @@ def calculate_node_betweenness(
 
             # Find all shortest paths from source to target
             all_paths = []
-
-            # BFS to find shortest path length
-            queue = [(source, [source])]
+            
+            # Use a deque for efficient queue operations
+            queue = deque([(source, [source])])
             shortest_length = float("inf")
-
+            
             while queue:
-                current, path = queue.pop(0)
-
+                current, path = queue.popleft()
+                
                 # If we've found a path to target
                 if current == target:
-                    all_paths.append(path)
+                    path_length = len(path) - 1
+                    
+                    # If this path is shorter than previous paths, clear all_paths
+                    if path_length < shortest_length:
+                        all_paths = [path]
+                        shortest_length = path_length
+                    # If this path is the same length as shortest paths, add it
+                    elif path_length == shortest_length:
+                        all_paths.append(path)
                     continue
-
+                
+                # Skip if path is longer than shortest path
                 if len(path) > shortest_length:
                     continue
-
-                for edge in edges:
-                    if edge["source"] == current and edge["target"] not in path:
-                        new_path = path + [edge["target"]]
-                        queue.append((edge["target"], new_path))
-
-                        if edge["target"] == target:
-                            shortest_length = len(new_path) - 1
-
+                
+                # Use path_set for fast lookups
+                path_set = set(path)
+                
+                # Only process neighbors of current node
+                for neighbor in graph[current]:
+                    if neighbor not in path_set:
+                        new_path = path + [neighbor]
+                        queue.append((neighbor, new_path))
+            
             # Count how many shortest paths go through each node
-            for path in all_paths:
-                for node in path[1:-1]:  # Exclude source and target
-                    betweenness[node] += 1.0 / len(all_paths)
+            if all_paths:
+                num_paths = len(all_paths)
+                # For each shortest path, increment betweenness for interior nodes
+                for path in all_paths:
+                    for node in path[1:-1]:  # Exclude source and target
+                        betweenness[node] += 1.0 / num_paths
 
     return betweenness
 
