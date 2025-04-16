@@ -1,5 +1,6 @@
 from typing import Any, NewType
 import networkx as nx
+from collections import defaultdict
 
 
 # derived from https://github.com/langflow-ai/langflow/pull/5261
@@ -90,21 +91,21 @@ def sort_chat_inputs_first(self, vertices_layers: list[list[str]]) -> list[list[
 def find_node_with_highest_degree(
     nodes: list[str], connections: dict[str, list[str]]
 ) -> str:
-    max_degree = -1
-    max_degree_node = None
+    
+    # Using defaultdict to simplify the degree counting
+    degree_count = defaultdict(int)
 
+    # Compute the degree of each node
+    for node, targets in connections.items():
+        degree_count[node] += len(targets)  # Outgoing connections
+        for target in targets:
+            degree_count[target] += 1  # Incoming connection
+
+    # Determine the node with the highest degree
+    max_degree_node, max_degree = None, -1
     for node in nodes:
-        degree = 0
-        # Count outgoing connections
-        degree += len(connections.get(node, []))
-
-        # Count incoming connections
-        for src, targets in connections.items():
-            if node in targets:
-                degree += 1
-
-        if degree > max_degree:
-            max_degree = degree
+        if degree_count[node] > max_degree:
+            max_degree = degree_count[node]
             max_degree_node = node
 
     return max_degree_node
