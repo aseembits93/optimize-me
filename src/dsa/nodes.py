@@ -61,29 +61,50 @@ def find_cycle_vertices(edges):
 
 # derived from https://github.com/langflow-ai/langflow/pull/5263
 def sort_chat_inputs_first(self, vertices_layers: list[list[str]]) -> list[list[str]]:
-    # First check if any chat inputs have dependencies
+    # Quick shortcut for empty input
+    if not vertices_layers:
+        return vertices_layers
+    
+    # First scan for chat inputs with dependencies in a single pass
+    has_chat_input_with_deps = False
     for layer in vertices_layers:
         for vertex_id in layer:
-            if "ChatInput" in vertex_id and self.get_predecessors(
-                self.get_vertex(vertex_id)
-            ):
-                return vertices_layers
-
+            # Early check to avoid expensive operations when possible
+            if "ChatInput" in vertex_id:
+                # Only check predecessors for chat inputs
+                if self.get_predecessors(self.get_vertex(vertex_id)):
+                    return vertices_layers  # Return early if any chat input has dependencies
+                has_chat_input_with_deps = True
+    
+    # If no chat inputs found at all, return original
+    if not has_chat_input_with_deps:
+        return vertices_layers
+        
     # If no chat inputs have dependencies, move them to first layer
+    # Pre-allocate approximate capacity for the new result
     chat_inputs_first = []
+    result_layers = []
+    
+    # Process all layers at once
     for layer in vertices_layers:
-        layer_chat_inputs_first = [
-            vertex_id for vertex_id in layer if "ChatInput" in vertex_id
-        ]
-        chat_inputs_first.extend(layer_chat_inputs_first)
-        for vertex_id in layer_chat_inputs_first:
-            # Remove the ChatInput from the layer
-            layer.remove(vertex_id)
-
+        # Separate chat inputs and other nodes in a single pass
+        new_layer = []
+        for vertex_id in layer:
+            if "ChatInput" in vertex_id:
+                chat_inputs_first.append(vertex_id)
+            else:
+                new_layer.append(vertex_id)
+        
+        # Only add non-empty layers to result
+        if new_layer:
+            result_layers.append(new_layer)
+    
+    # If no chat inputs after all, return original
     if not chat_inputs_first:
         return vertices_layers
-
-    return [chat_inputs_first, *vertices_layers]
+    
+    # Create final result with chat inputs first
+    return [chat_inputs_first] + result_layers
 
 
 # Function to find the node with highest degree (most connections)
