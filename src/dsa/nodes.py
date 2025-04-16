@@ -1,5 +1,6 @@
 from typing import Any, NewType
 import networkx as nx
+from collections import defaultdict, deque
 
 
 # derived from https://github.com/langflow-ai/langflow/pull/5261
@@ -114,17 +115,11 @@ def find_node_clusters(nodes: list[dict], edges: list[dict]) -> list[list[dict]]
     # Create node ID to node mapping for easy lookup
     node_map = {node["id"]: node for node in nodes}
 
-    # Create an adjacency list
-    adjacency = {}
+    # Create an adjacency list using defaultdict to avoid conditional checks
+    adjacency = defaultdict(list)
     for edge in edges:
         src = edge["source"]
         tgt = edge["target"]
-
-        if src not in adjacency:
-            adjacency[src] = []
-        if tgt not in adjacency:
-            adjacency[tgt] = []
-
         adjacency[src].append(tgt)
         adjacency[tgt].append(src)  # Assuming undirected graph for clustering
 
@@ -132,21 +127,24 @@ def find_node_clusters(nodes: list[dict], edges: list[dict]) -> list[list[dict]]
     visited = set()
     clusters = []
 
+    # Process nodes in bulk for better efficiency
     for node in nodes:
         node_id = node["id"]
         if node_id in visited:
             continue
 
-        # Start a new cluster
+        # Start a new cluster with BFS
         cluster = []
-        queue = [node_id]
+        # Use deque for O(1) popleft operation instead of list's O(n) pop(0)
+        queue = deque([node_id])
         visited.add(node_id)
 
         while queue:
-            current = queue.pop(0)
+            current = queue.popleft()
             cluster.append(node_map[current])
 
-            for neighbor in adjacency.get(current, []):
+            # Process neighbors
+            for neighbor in adjacency[current]:
                 if neighbor not in visited:
                     visited.add(neighbor)
                     queue.append(neighbor)
