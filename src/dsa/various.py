@@ -1,4 +1,5 @@
 import re
+from functools import lru_cache
 
 
 class Graph:
@@ -30,6 +31,7 @@ class Stack:
         return None
 
 
+@lru_cache(maxsize=None)
 def fibonacci(n):
     if n <= 1:
         return n
