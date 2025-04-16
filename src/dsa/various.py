@@ -1,4 +1,5 @@
 import re
+from collections import Counter
 
 
 class Graph:
@@ -78,14 +79,10 @@ def is_palindrome(text: str) -> bool:
 
 
 def word_frequency(text: str) -> dict[str, int]:
+    # Using Counter is much faster than manually counting frequencies
+    # as it's implemented in C and optimized for this exact use case
     words = text.lower().split()
-    frequency = {}
-    for word in words:
-        if word in frequency:
-            frequency[word] += 1
-        else:
-            frequency[word] = 1
-    return frequency
+    return dict(Counter(words))
 
 
 class PathFinder:
