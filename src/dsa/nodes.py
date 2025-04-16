@@ -1,5 +1,6 @@
 from typing import Any, NewType
 import networkx as nx
+from collections import defaultdict
 
 
 # derived from https://github.com/langflow-ai/langflow/pull/5261
@@ -205,24 +206,22 @@ def find_strongly_connected_components(
     nodes: list[str], edges: list[dict[str, str]]
 ) -> list[list[str]]:
     # Build adjacency list
-    graph = {}
-    for node in nodes:
-        graph[node] = []
+    graph = defaultdict(list)
+    reversed_graph = defaultdict(list)
 
     for edge in edges:
         src = edge["source"]
         tgt = edge["target"]
-        if src in graph:
-            graph[src].append(tgt)
+        graph[src].append(tgt)
+        reversed_graph[tgt].append(src)
 
-    # Find SCCs using a simplified version of Kosaraju's algorithm
+    # First DFS to fill the stack
     visited = set()
     stack = []
 
-    # First DFS to fill the stack
     def fill_order(node):
         visited.add(node)
-        for neighbor in graph.get(node, []):
+        for neighbor in graph[node]:
             if neighbor not in visited:
                 fill_order(neighbor)
         stack.append(node)
@@ -231,25 +230,14 @@ def find_strongly_connected_components(
         if node not in visited:
             fill_order(node)
 
-    # Create reversed graph
-    reversed_graph = {}
-    for node in nodes:
-        reversed_graph[node] = []
-
-    for edge in edges:
-        src = edge["source"]
-        tgt = edge["target"]
-        if tgt in reversed_graph:
-            reversed_graph[tgt].append(src)
-
     # Second DFS to find SCCs
-    visited = set()
+    visited.clear()
     sccs = []
 
     def collect_scc(node, component):
         visited.add(node)
         component.append(node)
-        for neighbor in reversed_graph.get(node, []):
+        for neighbor in reversed_graph[node]:
             if neighbor not in visited:
                 collect_scc(neighbor, component)
 
