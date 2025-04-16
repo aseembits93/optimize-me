@@ -70,11 +70,10 @@ def regex_match(strings: list[str], pattern: str) -> list[str]:
 
 
 def is_palindrome(text: str) -> bool:
-    cleaned_text = "".join(c.lower() for c in text if c.isalnum())
-    for i in range(len(cleaned_text) // 2):
-        if cleaned_text[i] != cleaned_text[len(cleaned_text) - 1 - i]:
-            return False
-    return True
+    # Using filter instead of list comprehension for cleaning the text
+    cleaned_text = "".join(filter(str.isalnum, text.lower()))
+    # Using slicing to check if the string is palindrome
+    return cleaned_text == cleaned_text[::-1]
 
 
 def word_frequency(text: str) -> dict[str, int]:
