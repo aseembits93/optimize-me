@@ -1,4 +1,5 @@
 import re
+from collections import deque
 
 
 class Graph:
@@ -95,22 +96,27 @@ class PathFinder:
     def find_shortest_path(self, start: str, end: str) -> list[str]:
         if start not in self.graph or end not in self.graph:
             return []
-
-        queue = [[start]]
-        visited = set([start])
-
+        
+        # Use deque for O(1) popleft() operations
+        queue = deque([start])
+        # Track visited nodes and their predecessors
+        visited = {start: None}
+        
         while queue:
-            path = queue.pop(0)
-            node = path[-1]
-
+            node = queue.popleft()
+            
             if node == end:
-                return path
-
+                # Reconstruct path
+                path = []
+                current = end
+                while current is not None:
+                    path.append(current)
+                    current = visited[current]
+                return path[::-1]  # Reverse to get start->end
+            
             for neighbor in self.graph.get(node, []):
                 if neighbor not in visited:
-                    visited.add(neighbor)
-                    new_path = list(path)
-                    new_path.append(neighbor)
-                    queue.append(new_path)
-
+                    visited[neighbor] = node
+                    queue.append(neighbor)
+        
         return []  # No path found
