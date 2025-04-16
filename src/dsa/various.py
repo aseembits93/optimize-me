@@ -62,11 +62,10 @@ def graph_traversal(graph: dict[int, dict[int]], node: int) -> dict[int]:
 
 
 def regex_match(strings: list[str], pattern: str) -> list[str]:
-    matched = []
-    for s in strings:
-        if re.match(pattern, s):
-            matched.append(s)
-    return matched
+    # Compile the regex pattern once
+    compiled_pattern = re.compile(pattern)
+    # Use list comprehension for better performance
+    return [s for s in strings if compiled_pattern.match(s)]
 
 
 def is_palindrome(text: str) -> bool:
