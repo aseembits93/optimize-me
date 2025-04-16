@@ -48,17 +48,20 @@ def matrix_sum(matrix: list[list[int]]) -> list[int]:
 
 
 def graph_traversal(graph: dict[int, dict[int]], node: int) -> dict[int]:
-    visited = []
-
+    visited = set()
+    result = []
+    
     def dfs(n: int) -> None:
         if n in visited:
             return
-        visited.append(n)
+        visited.add(n)
+        result.append(n)
         for neighbor in graph.get(n, []):
-            dfs(neighbor)
-
+            if neighbor not in visited:  # Pre-check to avoid unnecessary recursive calls
+                dfs(neighbor)
+    
     dfs(node)
-    return visited
+    return result
 
 
 def regex_match(strings: list[str], pattern: str) -> list[str]:
