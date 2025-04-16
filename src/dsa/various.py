@@ -1,4 +1,5 @@
 import re
+from collections import OrderedDict
 
 
 class Graph:
@@ -48,17 +49,17 @@ def matrix_sum(matrix: list[list[int]]) -> list[int]:
 
 
 def graph_traversal(graph: dict[int, dict[int]], node: int) -> dict[int]:
-    visited = []
+    visited = OrderedDict()
 
     def dfs(n: int) -> None:
         if n in visited:
             return
-        visited.append(n)
+        visited[n] = True
         for neighbor in graph.get(n, []):
             dfs(neighbor)
 
     dfs(node)
-    return visited
+    return list(visited.keys())  # Convert OrderedDict keys to list before returning
 
 
 def regex_match(strings: list[str], pattern: str) -> list[str]:
